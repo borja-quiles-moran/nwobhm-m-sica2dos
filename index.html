@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NWOBHM Wrapped - Resultados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Roboto:wght@300;400;700&display=swap');
+        
+        :root {
+            --spotify-green: #1db954;
+            --bg-black: #0b0b0b;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-black);
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            touch-action: none;
+        }
+
+        .oswald { font-family: 'Oswald', sans-serif; }
+
+        .slide {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            padding: 1.5rem;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide.active { 
+            display: flex; 
+            z-index: 10;
+        }
+
+        .slide-in-right { animation: slideInRight 0.4s forwards; }
+        .slide-in-left { animation: slideInLeft 0.4s forwards; }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.85));
+            z-index: 1;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: center;
+        }
+
+        .nav-container {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 100;
+        }
+
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-next-main {
+            background: var(--spotify-green);
+            color: black;
+            font-weight: 800;
+            padding: 0.8rem 2rem;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+        }
+
+        .bar-container {
+            width: 92%;
+            height: 3px;
+            background: rgba(255,255,255,0.1);
+            position: fixed;
+            top: 0.8rem;
+            left: 4%;
+            display: flex;
+            gap: 3px;
+            z-index: 100;
+        }
+
+        .bar {
+            height: 100%;
+            background: rgba(255,255,255,0.2);
+            flex: 1;
+            border-radius: 2px;
+        }
+
+        .bar.filled { background: white; }
+
+        .badge-container {
+            position: relative;
+            width: 60vw;
+            height: 60vw;
+            max-width: 240px;
+            max-height: 240px;
+            margin: 0 auto 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid var(--spotify-green);
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .rank-badge-big {
+            background: var(--spotify-green);
+            color: black;
+            font-family: 'Oswald', sans-serif;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 2rem;
+            font-weight: bold;
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 3;
+        }
+
+        .scroll-list {
+            overflow-y: auto;
+            max-height: 65vh;
+            padding-right: 10px;
+            text-align: left;
+        }
+
+        .scroll-list::-webkit-scrollbar { width: 4px; }
+        .scroll-list::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bar-container" id="progressBar"></div>
+    <div id="slides-container"></div>
+
+    <div class="nav-container">
+        <button class="btn-nav" id="prevBtn" onclick="prevSlide()">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <button class="btn-next-main" id="nextBtn" onclick="nextSlide()">
+            <span id="nextText">Siguiente</span>
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+        </button>
+    </div>
+
+    <script>
+        const rawData = [
+            {m:"Borja",g:"Iron Maiden",a:"Iron Maiden",y:1980},{m:"Borja",g:"Iron Maiden",a:"Killers",y:1980},{m:"Borja",g:"Quartz",a:"Stand Up and Fight",y:1980},{m:"Borja",g:"Angel Witch",a:"Angel Witch",y:1980},{m:"Borja",g:"Diamond Head",a:"Lightning to the Nations",y:1980},{m:"Borja",g:"Tygers of Pan Tang",a:"Spellbound",y:1981},{m:"Borja",g:"Venom",a:"Welcome To Hell",y:1981},{m:"Borja",g:"Venom",a:"Black Metal",y:1982},{m:"Borja",g:"Witchfinder General",a:"Death Penalty",y:1982},{m:"Borja",g:"White Spirit",a:"White Spirit",y:1980},{m:"Borja",g:"Motörhead",a:"Another Perfect Day",y:1983},{m:"Borja",g:"Saracen",a:"Heroes, Saints and Fools",y:1981},{m:"Borja",g:"Saxon",a:"Strong Arm of the Law",y:1980},{m:"Borja",g:"Saxon",a:"Wheels of Steel",y:1980},{m:"Borja",g:"Saxon",a:"Denim and Leather",y:1981},
+            {m:"Josevi",g:"Venom",a:"Welcome To Hell",y:1981},{m:"Josevi",g:"Witchfynde",a:"Give 'em Hell",y:1980},{m:"Josevi",g:"Tokyo Blade",a:"Tokyo Blade",y:1983},{m:"Josevi",g:"Iron Maiden",a:"Killers",y:1981},{m:"Josevi",g:"Saxon",a:"Wheels of Steel",y:1980},{m:"Josevi",g:"Satan",a:"Court in the Act",y:1983},{m:"Josevi",g:"Diamond Head",a:"Lightning to the Nations",y:1980},{m:"Josevi",g:"Demon",a:"The Unexpected Guest",y:1982},{m:"Josevi",g:"Praying Mantis",a:"Time Tells No Lies",y:1981},{m:"Josevi",g:"Angel Witch",a:"Angel Witch",y:1980},{m:"Josevi",g:"Tytan",a:"Rough Justice",y:1985},{m:"Josevi",g:"Saracen",a:"Heroes, Saints and Fools",y:1981},{m:"Josevi",g:"Tank",a:"Filth Hounds of Hades",y:1982},{m:"Josevi",g:"Pagan Altar",a:"Judgement of the Dead",y:1984},{m:"Josevi",g:"Blitzkrieg",a:"A Time of Changes",y:1985},
+            {m:"Edu",g:"Diamond Head",a:"Diamond Head",y:1980},{m:"Edu",g:"Tytan",a:"Rough Justice",y:1985},{m:"Edu",g:"Iron Maiden",a:"Killers",y:1981},{m:"Edu",g:"Satan",a:"Trial by Fire",y:1983},{m:"Edu",g:"Venom",a:"Black Metal",y:1982},{m:"Edu",g:"Angel Witch",a:"Angel Witch",y:1980},{m:"Edu",g:"Saxon",a:"Wheels of Steel",y:1980},{m:"Edu",g:"Tygers of Pan Tang",a:"Spellbound",y:1981},{m:"Edu",g:"Tank",a:"Honour & Blood",y:1984},{m:"Edu",g:"Cloven Hoof",a:"Cloven Hoof",y:1984},{m:"Edu",g:"Praying Mantis",a:"Time Tells No Lies",y:1981},{m:"Edu",g:"Saracen",a:"Heroes, Saints and Fools",y:1981},{m:"Edu",g:"White Spirit",a:"White Spirit",y:1980},{m:"Edu",g:"Quartz",a:"Stand Up and Fight",y:1980},{m:"Edu",g:"Samson",a:"Before the Storm",y:1982},
+            {m:"Toni",g:"Iron Maiden",a:"Iron Maiden",y:1980},{m:"Toni",g:"Iron Maiden",a:"Killers",y:1981},{m:"Toni",g:"Saxon",a:"Wheels of Steel",y:1980},{m:"Toni",g:"Venom",a:"Black Metal",y:1982},{m:"Toni",g:"Diamond Head",a:"Lightning to the Nations",y:1980},{m:"Toni",g:"Tank",a:"This Means War",y:1983},{m:"Toni",g:"Angel Witch",a:"Angel Witch",y:1980},{m:"Toni",g:"Praying Mantis",a:"Time Tells No Lies",y:1981},{m:"Toni",g:"Satan",a:"Court in the Act",y:1983},{m:"Toni",g:"Tygers of Pan Tang",a:"Spellbound",y:1981},{m:"Toni",g:"Saracen",a:"Heroes, Saints and Fools",y:1981},{m:"Toni",g:"Demon",a:"Night of the Demon",y:1981},{m:"Toni",g:"Witchfinder General",a:"Death Penalty",y:1982},{m:"Toni",g:"Motörhead",a:"Overkill",y:1979},{m:"Toni",g:"Tokyo Blade",a:"Night of the Blade",y:1984},
+            {m:"Manuel",g:"Angel Witch",a:"Angel Witch",y:1980},{m:"Manuel",g:"Diamond Head",a:"Lightning to the Nations",y:1980},{m:"Manuel",g:"Iron Maiden",a:"Iron Maiden",y:1980},{m:"Manuel",g:"Iron Maiden",a:"Killers",y:1981},{m:"Manuel",g:"Praying Mantis",a:"Time Tells No Lies",y:1981},{m:"Manuel",g:"Satan",a:"Court in the Act",y:1983},{m:"Manuel",g:"Saxon",a:"Wheels of Steel",y:1980},{m:"Manuel",g:"Saxon",a:"Strong Arm of the Law",y:1980},{m:"Manuel",g:"Saxon",a:"Denim and Leather",y:1981},{m:"Manuel",g:"Tokyo Blade",a:"Tokyo Blade",y:1983},{m:"Manuel",g:"Tygers of Pan Tang",a:"Spellbound",y:1981},{m:"Manuel",g:"Tytan",a:"Rough Justice",y:1985},{m:"Manuel",g:"Venom",a:"Welcome To Hell",y:1981},{m:"Manuel",g:"Venom",a:"Black Metal",y:1982},
+            {m:"Alma",g:"Demon",a:"Night of the Demon",y:1981},{m:"Alma",g:"Saracen",a:"Heroes, Saints and Fools",y:1981},{m:"Alma",g:"Diamond Head",a:"Lightning to the Nations",y:1980},{m:"Alma",g:"Iron Maiden",a:"Iron Maiden",y:1980},{m:"Alma",g:"Angel Witch",a:"Angel Witch",y:1980},{m:"Alma",g:"Pagan Altar",a:"Mythical and Magical",y:1983},{m:"Alma",g:"Satan",a:"Court in the Act",y:1983},{m:"Alma",g:"Witchfinder General",a:"Death Penalty",y:1982},{m:"Alma",g:"Tank",a:"Filth Hounds of Hades",y:1982},{m:"Alma",g:"Tygers of Pan Tang",a:"Spellbound",y:1981},{m:"Alma",g:"Samson",a:"Shock Tactics",y:1981},{m:"Alma",g:"Venom",a:"Black Metal",y:1982},{m:"Alma",g:"White Spirit",a:"White Spirit",y:1980},{m:"Alma",g:"Holocaust",a:"The Nightcomers",y:1981},{m:"Alma",g:"Motörhead",a:"Another Perfect Day",y:1983},
+            {m:"Raúl",g:"Iron Maiden",a:"Iron Maiden",y:1980},{m:"Raúl",g:"Saxon",a:"Wheels of Steel",y:1980},{m:"Raúl",g:"Angel Witch",a:"Angel Witch",y:1980},{m:"Raúl",g:"Diamond Head",a:"Lightning to the Nations",y:1980},{m:"Raúl",g:"Praying Mantis",a:"Time Tells No Lies",y:1981},{m:"Raúl",g:"Saxon",a:"Denim and Leather",y:1981},{m:"Raúl",g:"Witchfinder General",a:"Death Penalty",y:1982},{m:"Raúl",g:"Iron Maiden",a:"The Number of the Beast",y:1982},{m:"Raúl",g:"Tygers of Pan Tang",a:"Wild Cat",y:1980},{m:"Raúl",g:"Tank",a:"Honour & Blood",y:1984},{m:"Raúl",g:"Saxon",a:"Power & The Glory",y:1983},{m:"Raúl",g:"Satan",a:"Trial by Fire",y:1983},{m:"Raúl",g:"Venom",a:"Welcome To Hell",y:1981},{m:"Raúl",g:"Grim Reaper",a:"See You in Hell",y:1983},{m:"Raúl",g:"Tokyo Blade",a:"Tokyo Blade",y:1983},
+            {m:"Dani",g:"Gillan",a:"Mr. Universe",y:1979},{m:"Dani",g:"Motörhead",a:"Overkill",y:1979},{m:"Dani",g:"Angel Witch",a:"Angel Witch",y:1980},{m:"Dani",g:"Diamond Head",a:"Lightning to the Nations",y:1980},{m:"Dani",g:"Saxon",a:"Wheels of Steel",y:1980},{m:"Dani",g:"White Spirit",a:"White Spirit",y:1980},{m:"Dani",g:"Praying Mantis",a:"Time Tells No Lies",y:1981},{m:"Dani",g:"Saracen",a:"Heroes, Saints and Fools",y:1981},{m:"Dani",g:"Tygers of Pan Tang",a:"Spellbound",y:1981},{m:"Dani",g:"Demon",a:"The Unexpected Guest",y:1982},{m:"Dani",g:"Samson",a:"Before the Storm",y:1982},{m:"Dani",g:"Venom",a:"Black Metal",y:1982},{m:"Dani",g:"Witchfinder General",a:"Death Penalty",y:1982},{m:"Dani",g:"Raven",a:"All for One",y:1983},{m:"Dani",g:"Tank",a:"Honour & Blood",y:1984}
+        ];
+
+        let currentSlide = 0;
+        let totalSlides = 0;
+        let startX = 0;
+        let shareText = "";
+
+        function processDataAndBuildSlides() {
+            const bandsMap = {};
+            const albumsMap = {};
+            
+            rawData.forEach(item => {
+                bandsMap[item.g] = (bandsMap[item.g] || 0) + 1;
+                const aFullKey = `${item.a} | ${item.g}`;
+                albumsMap[aFullKey] = (albumsMap[aFullKey] || 0) + 1;
+            });
+
+            const sortedBands = Object.entries(bandsMap).sort((a,b) => b[1] - a[1]);
+            const sortedAlbums = Object.entries(albumsMap).sort((a,b) => b[1] - a[1]);
+
+            const top10Bands = sortedBands.slice(0, 10);
+            const top10Albums = sortedAlbums.slice(0, 10);
+
+            let slidesHTML = "";
+
+            const bandImages = {
+                'Iron Maiden': 'ironmaiden.jpg',
+                'Saxon': 'SAXON.jpg',
+                'Diamond Head': 'diamondhead.jpg',
+                'Angel Witch': 'angelwitch.jpg',
+                'Venom': 'venom.jpg',
+                'Praying Mantis': 'prayingmantis.jpg',
+                'Saracen': 'saracenband.jpg',
+                'Tank': 'tank.jpg',
+                'Tygers of Pan Tang': 'tygers.jpg',
+                'Satan': 'satan.jpg'
+            };
+
+            const albumImages = {
+                'Angel Witch | Angel Witch': '3626.jpg',
+                'Killers | Iron Maiden': 'killers.jpg',
+                'Iron Maiden | Iron Maiden': 'iron.jpg',
+                'Lightning to the Nations | Diamond Head': 'lightning.jpg',
+                'Wheels of Steel | Saxon': 'wheels.jpg',
+                'Spellbound | Tygers of Pan Tang': 'spellbound.jpg',
+                'Time Tells No Lies | Praying Mantis': 'praying.jpg',
+                'Welcome To Hell | Venom': 'black.jpg',
+                'Black Metal | Venom': 'black.jpg',
+                'Heroes, Saints and Fools | Saracen': 'sarace.jpg',
+                'Death Penalty | Witchfinder General': 'witch.jpeg',
+                'Court in the Act | Satan': ''
+            };
+
+            // 1. INTRO
+            slidesHTML += `
+                <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1514525253361-bee8a187499b?auto=format&fit=crop&w=1000');">
+                    <div class="overlay"></div>
+                    <div class="content">
+                        <h2 class="text-sm uppercase tracking-[0.3em] mb-3 font-bold text-green-400">NWOBHM WRAPPED</h2>
+                        <h1 class="oswald text-6xl italic uppercase leading-none mb-6">MÚSICA 2 DOS: MEJORES DISCOS</h1>
+                        <p class="text-lg opacity-80 px-6 font-light">8 musicadoseros. ${rawData.length} votos.<br><span class="font-bold">Metal or Die.</span></p>
+                    </div>
+                </div>`;
+
+            // 2. TOP 10 BANDAS (Modificado para incluir imagen en el recuadro)
+            const bandColors = ['bg-slate-900', 'bg-zinc-900', 'bg-neutral-900', 'bg-stone-900', 'bg-gray-900', 'bg-slate-800', 'bg-zinc-800', 'bg-neutral-800', 'bg-stone-800', 'bg-black'];
+            [...top10Bands].reverse().forEach(([name, count], index) => {
+                const rank = 10 - index;
+                const bgImage = bandImages[name] || '';
+                const bgStyle = bgImage ? `background-image: url('${bgImage}');` : '';
+
+                slidesHTML += `
+                    <div class="slide ${bandColors[index]}" style="${bgStyle}">
+                        <div class="overlay"></div>
+                        <div class="content">
+                            <div class="badge-container" style="${bgImage ? `background-image: url('${bgImage}');` : ''}">
+                                <span class="oswald text-4xl tracking-tighter opacity-20 uppercase" style="${bgImage ? 'text-shadow: 2px 2px 8px rgba(0,0,0,0.8);' : ''}">Banda</span>
+                                <div class="rank-badge-big">${rank}</div>
+                            </div>
+                            <h3 class="text-green-400 font-bold tracking-widest text-xs uppercase mb-2">Top Bandas</h3>
+                            <h1 class="oswald text-5xl mb-2 uppercase leading-tight px-4">${name}</h1>
+                            <div class="mt-4 text-sm font-bold bg-white/10 inline-block px-4 py-2 rounded-full">${count} Votos</div>
+                        </div>
+                    </div>`;
+            });
+
+            // 3. TODAS LAS BANDAS
+            slidesHTML += `
+                <div class="slide bg-zinc-900">
+                    <div class="content px-4">
+                        <h2 class="oswald text-2xl mb-4 text-left border-l-4 border-green-500 pl-4 uppercase">Ranking Bandas</h2>
+                        <div class="scroll-list">
+                            ${sortedBands.map(([name, count], i) => `
+                                <div class="flex justify-between items-center py-2 border-b border-white/5">
+                                    <span><span class="opacity-30 mr-2 text-sm">${i+1}</span> ${name}</span>
+                                    <span class="font-bold text-green-400">${count}</span>
+                                </div>`).join('')}
+                        </div>
+                    </div>
+                </div>`;
+
+            // 4. TOP 10 DISCOS
+            const albumColors = ['bg-indigo-950', 'bg-blue-950', 'bg-emerald-950', 'bg-teal-950', 'bg-cyan-950', 'bg-sky-950', 'bg-violet-950', 'bg-purple-950', 'bg-rose-950', 'bg-black'];
+            [...top10Albums].reverse().forEach(([key, count], index) => {
+                const rank = 10 - index;
+                const [title, artist] = key.split(' | ');
+                const bgImage = albumImages[key] || '';
+                const bgStyle = bgImage ? `background-image: url('${bgImage}');` : '';
+
+                slidesHTML += `
+                    <div class="slide ${albumColors[index]}" style="${bgStyle}">
+                        <div class="overlay"></div>
+                        <div class="content">
+                             <div class="badge-container" style="border-radius: 8px; ${bgImage ? `background-image: url('${bgImage}');` : ''}">
+                                <span class="oswald text-4xl tracking-tighter opacity-20 uppercase" style="${bgImage ? 'text-shadow: 2px 2px 8px rgba(0,0,0,0.8);' : ''}">Disco</span>
+                                <div class="rank-badge-big" style="background: white; color: black;">${rank}</div>
+                            </div>
+                            <h3 class="text-blue-300 font-bold tracking-widest text-xs uppercase mb-2">Top Discos</h3>
+                            <h1 class="oswald text-4xl mb-1 uppercase leading-tight px-4">${title}</h1>
+                            <p class="text-xl opacity-60">${artist}</p>
+                            <div class="mt-4 text-sm font-bold bg-white/10 inline-block px-4 py-2 rounded-full">${count} Votos</div>
+                        </div>
+                    </div>`;
+            });
+
+            // 5. TODOS LOS DISCOS
+            slidesHTML += `
+                <div class="slide bg-zinc-900">
+                    <div class="content px-4">
+                        <h2 class="oswald text-2xl mb-4 text-left border-l-4 border-blue-500 pl-4 uppercase">Ranking Discos</h2>
+                        <div class="scroll-list">
+                            ${sortedAlbums.map(([key, count], i) => `
+                                <div class="flex flex-col py-2 border-b border-white/5 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="font-bold uppercase">${key.split(' | ')[0]}</span>
+                                        <span class="text-blue-400 font-bold">${count}v</span>
+                                    </div>
+                                    <span class="opacity-50 text-xs">${key.split(' | ')[1]}</span>
+                                </div>`).join('')}
+                        </div>
+                    </div>
+                </div>`;
+
+            // 6. RESULTADOS POR PERSONA
+            const members = ["Borja", "Josevi", "Edu", "Toni", "Manuel", "Alma", "Raúl", "Dani"];
+            const memberColors = ['bg-red-900', 'bg-orange-900', 'bg-amber-900', 'bg-lime-900', 'bg-green-900', 'bg-teal-900', 'bg-cyan-900', 'bg-indigo-900'];
+            
+            members.forEach((member, idx) => {
+                const memberVotes = rawData.filter(v => v.m === member);
+                const memberBands = {};
+                memberVotes.forEach(v => { memberBands[v.g] = (memberBands[v.g] || 0) + 1; });
+                const topBand = Object.entries(memberBands).sort((a,b) => b[1] - a[1])[0];
+                
+                slidesHTML += `
+                    <div class="slide ${memberColors[idx]}">
+                        <div class="overlay"></div>
+                        <div class="content px-4">
+                            <h3 class="text-green-400 font-bold tracking-widest text-xs uppercase mb-2">Votos de</h3>
+                            <h1 class="oswald text-5xl mb-6 uppercase">${member}</h1>
+                            <div class="mb-4">
+                                <p class="text-sm opacity-60 mb-1">Banda más votada</p>
+                                <p class="text-2xl font-bold text-green-400">${topBand[0]}</p>
+                            </div>
+                            <div class="mt-6 text-left bg-white/5 rounded-lg p-4">
+                                <p class="text-xs font-bold mb-2 opacity-60 uppercase">Su lista:</p>
+                                <div class="space-y-1 max-h-40 overflow-y-auto">
+                                    ${memberVotes.map(v => `
+                                        <div class="text-[10px] border-b border-white/5 pb-1">
+                                            <span class="font-bold">${v.a}</span><span class="opacity-50"> · ${v.g}</span>
+                                        </div>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            // 7. FINAL
+            slidesHTML += `
+                <div class="slide bg-black">
+                    <div class="content px-6">
+                        <h2 class="oswald text-5xl mb-6 uppercase leading-tight">AGUANTE MÚSICA 2 DOS!</h2>
+                        <button onclick="copyResults(event)" class="bg-white text-black w-full py-4 rounded-full font-bold text-lg active:scale-95 transition-transform">
+                            COPIAR RESULTADOS
+                        </button>
+                    </div>
+                </div>`;
+
+            document.getElementById('slides-container').innerHTML = slidesHTML;
+            totalSlides = document.querySelectorAll('.slide').length;
+            
+            const top1 = top10Albums[0][0].split(' | ');
+            shareText = `🤘 NWOBHM WRAPPED 🤘\n\n🥇 EL MEJOR: ${top1[0]}\n🥈 SEGUNDO: ${top10Albums[1][0].split(' | ')[0]}\n\nTOP 3 BANDAS:\n1. ${sortedBands[0][0]}\n2. ${sortedBands[1][0]}\n3. ${sortedBands[2][0]}\n\n¡Metal or Die!`;
+        }
+
+        function showSlide(index, direction) {
+            const slides = document.querySelectorAll('.slide');
+            slides.forEach(s => s.classList.remove('active', 'slide-in-right', 'slide-in-left'));
+            currentSlide = index;
+            const activeSlide = slides[currentSlide];
+            activeSlide.classList.add('active');
+            if(direction === 'next') activeSlide.classList.add('slide-in-right');
+            if(direction === 'prev') activeSlide.classList.add('slide-in-left');
+            document.getElementById('prevBtn').style.visibility = currentSlide === 0 ? 'hidden' : 'visible';
+            const nextBtn = document.getElementById('nextBtn');
+            if(currentSlide === totalSlides - 1) {
+                nextBtn.style.opacity = '0';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+                document.getElementById('nextText').innerText = currentSlide === 0 ? 'Empezar' : 'Siguiente';
+            }
+            updateProgress();
+        }
+
+        function nextSlide() { if (currentSlide < totalSlides - 1) showSlide(currentSlide + 1, 'next'); }
+        function prevSlide() { if (currentSlide > 0) showSlide(currentSlide - 1, 'prev'); }
+
+        function updateProgress() {
+            const container = document.getElementById('progressBar');
+            container.innerHTML = '';
+            for (let i = 0; i < totalSlides; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'bar ' + (i <= currentSlide ? 'filled' : '');
+                container.appendChild(bar);
+            }
+        }
+
+        function copyResults(e) {
+            const btn = e.target;
+            navigator.clipboard.writeText(shareText).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "¡COPIADO! ✅";
+                btn.classList.replace('bg-white', 'bg-green-500');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.replace('bg-green-500', 'bg-white');
+                }, 2000);
+            });
+        }
+
+        document.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+        document.addEventListener('touchend', e => {
+            const diff = startX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 50) diff > 0 ? nextSlide() : prevSlide();
+        });
+
+        window.onload = () => {
+            processDataAndBuildSlides();
+            updateProgress();
+        };
+    </script>
+</body>
+</html>
